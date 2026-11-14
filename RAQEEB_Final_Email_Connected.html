@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RAQEEB Live Simulation</title>
+<style>
+:root{--bg:#e9eff0;--card:#fff;--ink:#12202e;--mut:#5b6b78;--line:#cfdadb;--navy:#0F2A47;--teal:#1B7F86;--or:#F5A623;--bad:#d64545;--ok:#1f9d6b;--band:rgba(214,69,69,.13);--tint:#e3f1f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#081522;--card:#0f2740;--ink:#e8f0f3;--mut:#9fb3bf;--line:#223f5c;--band:rgba(214,69,69,.2);--tint:#12304a;--teal:#4fc3c9}}
+:root[data-theme="dark"]{--bg:#081522;--card:#0f2740;--ink:#e8f0f3;--mut:#9fb3bf;--line:#223f5c;--band:rgba(214,69,69,.2);--tint:#12304a;--teal:#4fc3c9}
+*{box-sizing:border-box;margin:0}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",Tahoma,system-ui,sans-serif;min-height:100vh}
+header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:3px solid var(--or)}
+header h1{font-size:20px;letter-spacing:.5px}header .sp{flex:1}
+.pill{padding:4px 12px;border-radius:99px;font-weight:700;font-size:13px;background:#35506d}
+.pill.ok{background:var(--ok)}.pill.bad{background:var(--bad)}.pill.wait{background:#8a6d1c}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:6px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+button.p{background:var(--teal);color:#fff;border-color:var(--teal)}button.d{background:var(--bad);color:#fff;border-color:var(--bad)}
+header button{background:transparent;color:#fff;border-color:#6f8ba6}
+.note{background:#fff0d2;color:#5a3b00;text-align:center;padding:5px;font-size:12.5px;font-weight:600}
+main{display:grid;grid-template-columns:300px 1fr 380px;gap:14px;padding:14px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+h2{font-size:13.5px;margin-bottom:8px;color:var(--teal)}
+canvas{width:100%;display:block}
+#motor{aspect-ratio:3/2;background:var(--tint);border-radius:6px}
+.ch{height:150px;margin-bottom:4px}.cl{font-size:12.5px;color:var(--mut);display:flex;justify-content:space-between;margin-top:8px}
+.cl b{color:var(--ink)}
+.faults{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.faults button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+label{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}input[type=range]{flex:1;accent-color:var(--teal)}
+.side{display:flex;flex-direction:column;gap:14px}
+.item{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:6px;background:var(--tint)}
+.item .r{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.item small{color:var(--mut)}
+.tag{font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:4px;background:var(--or);color:#2b1a00}
+.tag.g{background:var(--ok);color:#fff}.tag.b{background:var(--bad);color:#fff}
+.log{max-height:150px;overflow:auto;font-size:12.5px}.log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.log i{font-style:normal;color:var(--teal);font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:start}th{color:var(--mut);font-weight:600}
+.empty{color:var(--mut);font-size:12.5px}
+.email-input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;margin:4px 0 8px}
+.email-actions{display:flex;gap:6px;flex-wrap:wrap}.email-status{font-size:12px;color:var(--mut);margin-top:7px;min-height:18px}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style></head><body>
+<header><h1>RAQEEB</h1><span id="ttl"></span><span class="sp"></span><span class="pill" id="st"></span><button id="lg" aria-label="Language">عربي</button></header>
+<div class="note" id="nt"></div>
+<main>
+<section class="card"><h2 id="h_m"></h2><canvas id="motor" width="300" height="200"></canvas>
+<div class="faults" id="fb"></div>
+<label><span id="l_sev"></span><input type="range" id="sev" min="10" max="100" value="70"></label>
+<label><input type="checkbox" id="rep" checked><span id="l_rep"></span></label>
+<div style="display:flex;gap:6px;margin-top:8px"><button id="pz" class="p"></button><button id="rs"></button></div>
+<div class="cl" style="display:block"><div id="rd"></div></div></section>
+<section class="card"><h2 id="h_c"></h2>
+<div class="cl"><b id="c1"></b><span id="v1"></span></div><canvas class="ch" id="ct"></canvas>
+<div class="cl"><b id="c2"></b><span id="v2"></span></div><canvas class="ch" id="cv"></canvas>
+<div class="cl"><b id="c3"></b><span id="v3"></span></div><canvas class="ch" id="cs"></canvas>
+<div class="cl"><span id="lg1"></span></div></section>
+<div class="side">
+<section class="card"><h2 id="h_email"></h2><label for="qualityEmail" id="l_email"></label><input class="email-input" type="email" id="qualityEmail" placeholder="quality.manager@example.com" autocomplete="email"><div class="email-actions"><button class="p" id="saveEmail" type="button"></button><button id="testEmail" type="button"></button></div><div class="email-status" id="emailStatus" aria-live="polite"></div></section>
+<section class="card"><h2 id="h_a"></h2><div id="al"></div></section>
+<section class="card"><h2 id="h_t"></h2><div id="tk"></div></section>
+<section class="card"><h2 id="h_g"></h2><div class="log" id="lo"></div></section>
+<section class="card"><h2 id="h_k"></h2><table id="cmp"></table></section>
+</div></main>
+<script>
+const TX={en:{
+ttl:"Live simulation: motor condition monitoring",nt:"Simulated data. These are not real test results.",hm:"Motor and faults",
+f:["No fault","Imbalance","Bearing wear","Overheating"],sev:"Severity",rep:"Repair succeeds",pz:"Pause",rs:"Reset",ru:"Resume",
+hc:"Live readings",c1:"Temperature (°C)",c2:"Vibration RMS (g)",c3:"Isolation Forest score",lg1:"Orange line: limit. Red band: a fault is really active (known only in simulation).",
+ha:"Alerts and review queue",hn:"Maintenance tasks",hg:"Agents log",hk:"Detector comparison",
+none:"Nothing to review.",notk:"No tasks yet.",ok:"Normal",cal:"Calibrating",rv:"Review needed",rp:"Repair verification",
+cf:"Confirm fault",fa:"False alarm",rd:"Repair done",
+th:"Threshold baseline",ifo:"Isolation Forest",fas:"False alarms",ms:"Misses",dl:"Delay",
+al:s=>`Unusual pattern, score ${s}. A person must decide.`,
+st:{open:"Open",ver:"Verifying",closed:"Closed",reo:"Reopened"},
+hy:{t:"Overheating pattern: check cooling and load.",v:"Vibration pattern: check balance and bearings."},
+pr:{h:"High priority",n:"Normal priority"},bf:"Before",af:"After",
+m1:s=>`Thresholds and model set from normal run (${s}).`,
+m2:s=>`Unusual pattern detected (score ${s}). Review requested. This is not a confirmed diagnosis.`,
+m3:"Person confirmed the fault.",m4:"Person marked it as a false alarm.",
+p1:(h,p)=>`Task created. ${h} ${p}.`,p2:"Repair reported. Follow-up will compare readings.",
+g1:(a,b)=>`Verified: readings are back under the limits (avg ${a}). Task closed.`,
+g2:(a,b)=>`Readings still abnormal after repair (avg ${a}). Task reopened and escalated.`,
+ag:["Monitor agent","Planner agent","Follow-up agent"],w:"windows",hEmail:"Email automation",lEmail:"Quality manager email",saveEmail:"Save email",testEmail:"Send test email",emailInvalid:"Enter a valid email address.",emailSaved:"Recipient email saved in this browser.",emailNotConfigured:"Email service is not connected yet. Add the Apps Script URL in the code.",emailRequested:"Email request submitted. Check the recipient inbox; browser cannot confirm delivery.",emailFailed:"Could not submit the email request. Check the connection and Apps Script URL."},
+ar:{
+ttl:"محاكاة مباشرة: مراقبة حالة المحرك",nt:"بيانات محاكاة وليست نتائج اختبار حقيقية.",hm:"المحرك والأعطال",
+f:["بدون عطل","عدم اتزان","تآكل رولمان بلي","ارتفاع حرارة"],sev:"شدة العطل",rep:"الإصلاح ينجح",pz:"إيقاف مؤقت",rs:"إعادة ضبط",ru:"استئناف",
+hc:"القراءات المباشرة",c1:"الحرارة (°م)",c2:"الاهتزاز RMS (g)",c3:"درجة Isolation Forest",lg1:"الخط البرتقالي: الحد. الشريط الأحمر: عطل فعلي (معروف في المحاكاة فقط).",
+ha:"التنبيهات وطابور المراجعة",hn:"مهام الصيانة",hg:"سجل الوكلاء",hk:"مقارنة الكاشفات",
+none:"لا شيء للمراجعة.",notk:"لا توجد مهام بعد.",ok:"طبيعي",cal:"جارٍ المعايرة",rv:"يحتاج مراجعة",rp:"التحقق بعد الإصلاح",
+cf:"تأكيد العطل",fa:"إنذار كاذب",rd:"تم الإصلاح",
+th:"خط الأساس بالحدود",ifo:"Isolation Forest",fas:"إنذارات كاذبة",ms:"فائتة",dl:"التأخير",
+al:s=>`نمط غير معتاد، الدرجة ${s}. يلزم قرار من شخص.`,
+st:{open:"مفتوحة",ver:"قيد التحقق",closed:"مغلقة",reo:"أُعيد فتحها"},
+hy:{t:"نمط ارتفاع حرارة: افحص التبريد والحمل.",v:"نمط اهتزاز: افحص الاتزان والرولمان بلي."},
+pr:{h:"أولوية عالية",n:"أولوية عادية"},bf:"قبل",af:"بعد",
+m1:s=>`تم ضبط الحدود والنموذج من التشغيل الطبيعي (${s}).`,
+m2:s=>`اكتشاف نمط غير معتاد (الدرجة ${s}). طُلبت مراجعة. هذا ليس تشخيصاً مؤكداً.`,
+m3:"أكد الشخص وجود العطل.",m4:"صنّف الشخص التنبيه كإنذار كاذب.",
+p1:(h,p)=>`أُنشئت مهمة. ${h} ${p}.`,p2:"أُبلغ عن الإصلاح. ستقارن المتابعة القراءات.",
+g1:(a,b)=>`تم التحقق: عادت القراءات تحت الحدود (متوسط ${a}). أُغلقت المهمة.`,
+g2:(a,b)=>`القراءات ما زالت غير طبيعية بعد الإصلاح (متوسط ${a}). أُعيد فتح المهمة وتصعيدها.`,
+ag:["وكيل المراقبة","وكيل التخطيط","وكيل المتابعة"],w:"نافذة",hEmail:"أتمتة البريد الإلكتروني",lEmail:"إيميل مسؤول الجودة",saveEmail:"حفظ الإيميل",testEmail:"إرسال رسالة تجريبية",emailInvalid:"من فضلك أدخلي إيميل صحيح.",emailSaved:"تم حفظ الإيميل في هذا المتصفح.",emailNotConfigured:"خدمة الإرسال غير متصلة بعد. أضيفي رابط Apps Script في الكود.",emailRequested:"تم إرسال طلب الإيميل. راجعي صندوق الوارد؛ المتصفح لا يستطيع تأكيد التسليم.",emailFailed:"تعذر إرسال طلب الإيميل. راجعي الاتصال ورابط Apps Script."}};
+let lang="en";const T=()=>TX[lang],$=i=>document.getElementById(i),N=160,TR=40,CAL=80,VER=40;
+// Paste the deployed Google Apps Script Web App URL here after deployment.
+const EMAIL_WEB_APP_URL="https://script.google.com/macros/s/AKfycbxIxeQYeYi4zsjgCyvmbdj8x9nJbKVwCYUVGdVLbEAgyY-U6bxdMUMPJ-agiNqywZpdAA/exec";
+const EMAIL_STORAGE_KEY="raqeeb_quality_manager_email";
+function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
+function recipient(){return ($("qualityEmail").value||"").trim()}
+function saveRecipient(){const email=recipient();if(!validEmail(email)){$("emailStatus").textContent=T().emailInvalid;return false}try{localStorage.setItem(EMAIL_STORAGE_KEY,email)}catch(e){}$("emailStatus").textContent=T().emailSaved;if(typeof S!=="undefined")S.alerts.filter(a=>!a.emailStatus||a.emailStatus==="not-configured"||a.emailStatus==="failed").forEach(sendQualityReport);return true}
+function postEmail(payload){if(!validEmail(payload.to)){$("emailStatus").textContent=T().emailInvalid;return Promise.resolve(false)}if(!EMAIL_WEB_APP_URL.startsWith("https://script.google.com/macros/s/")){$("emailStatus").textContent=T().emailNotConfigured;return Promise.resolve(false)}
+ // no-cors avoids the browser CORS preflight; the opaque response cannot confirm delivery.
+ return fetch(EMAIL_WEB_APP_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(()=>{$("emailStatus").textContent=T().emailRequested;return true}).catch(()=>{$("emailStatus").textContent=T().emailFailed;return false})}
+function sendQualityReport(a){const to=recipient();if(!validEmail(to)){a.emailStatus="not-configured";$("emailStatus").textContent=T().emailInvalid;return}
+ if(a.emailStatus==="requested"||a.emailStatus==="sent")return;a.emailStatus="requested";
+ const reasons=[];if(a.t>S.lim[0])reasons.push("Temperature above limit");if(a.v>S.lim[1])reasons.push("Vibration RMS above limit");if(!reasons.length)reasons.push("Unusual Isolation Forest pattern");
+ const payload={to,kind:"alert",motorId:"RAQEEB-MOTOR-001",eventId:a.id,timestamp:new Date().toISOString(),temperature:Number(a.t.toFixed(2)),temperatureLimit:Number(S.lim[0].toFixed(2)),vibrationRMS:Number(a.v.toFixed(4)),vibrationLimit:Number(S.lim[1].toFixed(4)),isolationForestScore:Number(a.sc.toFixed(3)),reason:reasons.join("; "),suggestedAction:a.rT>a.rV*1.5?"Inspect cooling and motor load.":"Inspect motor balance and bearings."};
+ postEmail(payload).then(ok=>{a.emailStatus=ok?"requested":"failed";if(!ok)lg(0,()=>T().emailFailed)});
+}
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),gauss=()=>{let u=0;for(let i=0;i<6;i++)u+=Math.random();return(u-3)/.7071};
+/* ---- Isolation Forest (2 features, standardized) ---- */
+const cF=n=>n<=1?0:2*(Math.log(n-1)+.5772)-2*(n-1)/n;
+function tree(X,d,m){if(d>=m||X.length<=1)return{n:X.length};const q=Math.random()<.5?0:1,v=X.map(r=>r[q]),lo=Math.min(...v),hi=Math.max(...v);if(lo===hi)return{n:X.length};const p=lo+Math.random()*(hi-lo);return{q,p,l:tree(X.filter(r=>r[q]<p),d+1,m),r:tree(X.filter(r=>r[q]>=p),d+1,m)}}
+const path=(x,t,d=0)=>t.n!==undefined?d+cF(t.n):path(x,x[t.q]<t.p?t.l:t.r,d+1);
+function forest(X){const psi=Math.min(40,X.length),m=9,F=[];for(let i=0;i<80;i++){const s=[];for(let j=0;j<psi;j++)s.push(X[Math.floor(Math.random()*X.length)]);F.push(tree(s,0,m))}return{F,psi}}
+const score=(M,x)=>Math.pow(2,-(M.F.reduce((a,t)=>a+path(x,t),0)/M.F.length)/cF(M.psi));
+/* ---- State ---- */
+let S,R;
+function reset(){S={w:0,fault:0,se:0,tS:42,temp:42,vib:.05,sc:0,truth:false,run:true,lim:null,M:null,mu:null,
+ cal:[],h:{t:[],v:[],s:[],f:[]},thr:{c:0,flag:false,fa:0,ms:0,dl:null},iff:{c:0,flag:false,fa:0,ms:0,dl:null},tStart:null,
+ armed:true,okc:0,alerts:[],tasks:[],log:[],id:0,ang:0};
+ $("pz").textContent=T().pz;for(let i=0;i<CAL;i++)step();render()}
+function lg(a,m){S.log.unshift({a,m});S.log.length=Math.min(S.log.length,40)}
+function step(){if(!S.run)return;S.w++;
+ const sev=$("sev").value/100,tg=S.fault?sev:0;S.se+=clamp(tg-S.se,-.04,.04);const se=S.se,f=S.fault;
+ const add=[0,4,14,38][f]*se;S.tS+=((42+add+.6*Math.sin(S.w/70))-S.tS)*.08;S.temp=S.tS+gauss()*.35;
+ let va=[0,.30,.14,.03][f]*se;if(f==2&&Math.random()<.12)va+=.08*se;S.vib=Math.max(.01,.05+va+gauss()*.007);
+ const tr=se>.05;if(tr&&!S.truth){S.tStart=S.w;S.thr.dl=null;S.iff.dl=null}if(!tr)S.tStart=null;S.truth=tr;
+ if(S.w<=CAL){S.cal.push([S.temp,S.vib]);if(S.w===TR)train();if(S.w===CAL)calibrate();S.sc=0}
+ else{const z=zf([S.temp,S.vib]);S.sc=score(S.M,z);detect()}
+ const H=S.h;H.t.push(S.temp);H.v.push(S.vib);H.s.push(S.sc);H.f.push(S.truth);if(H.t.length>N)for(const k in H)H[k].shift();
+ workflow();render()}
+function train(){const c=S.cal,mu=[0,1].map(i=>c.reduce((a,r)=>a+r[i],0)/c.length),sd=[0,1].map(i=>Math.sqrt(c.reduce((a,r)=>a+(r[i]-mu[i])**2,0)/c.length));
+ S.mu=mu;S.sd=[Math.max(sd[0],.3),Math.max(sd[1],.006)];S.lim=[mu[0]+3*S.sd[0],mu[1]+3*S.sd[1]];S.M=forest(c.map(zf))}
+function calibrate(){const sc=S.cal.slice(TR).map(r=>score(S.M,zf(r)));sc.sort((a,b)=>a-b);S.sl=Math.max(.55,sc[Math.floor(sc.length*.9)]+.005);{const v=`${S.lim[0].toFixed(1)} °C, ${S.lim[1].toFixed(3)} g`;lg(0,()=>T().m1(v))}}
+const zf=r=>[(r[0]-S.mu[0])/S.sd[0],(r[1]-S.mu[1])/S.sd[1]];
+function detect(){const a=S.temp>S.lim[0]||S.vib>S.lim[1],b=S.sc>S.sl;
+ for(const[d,x]of[[S.thr,a],[S.iff,b]]){d.c=x?d.c+1:0;d.flag=d.c>=(d===S.iff?7:2);if(d.flag&&!S.truth&&Math.abs(S.tS-42)<1)d.fa++;if(!d.flag&&S.truth)d.ms++;if(d.flag&&S.tStart&&d.dl===null)d.dl=S.w-S.tStart;}}
+function workflow(){const open=S.alerts.some(a=>a.s==="r")||S.tasks.some(k=>k.s==="open"||k.s==="ver"||k.s==="reo");
+ if(S.w>CAL){if(!S.iff.flag&&!S.thr.flag)S.okc++;else S.okc=0;if(S.okc>=6&&!open)S.armed=true;
+  if((S.iff.flag||S.thr.flag)&&S.armed&&!open){S.armed=false;const rT=(S.temp-S.mu[0])/(S.lim[0]-S.mu[0]),rV=(S.vib-S.mu[1])/(S.lim[1]-S.mu[1]);
+   const alert={id:++S.id,s:"r",sc:S.sc,t:S.temp,v:S.vib,rT,rV,createdAt:new Date().toISOString(),emailStatus:null};S.alerts.push(alert);sendQualityReport(alert);{const v=S.sc.toFixed(2);lg(0,()=>T().m2(v))}}}
+ for(const k of S.tasks)if(k.s==="ver"){k.n++;if(k.n>VER-10){k.a.t+=S.temp;k.a.v+=S.vib}
+  if(k.n>=VER){const at=k.a.t/10,av=k.a.v/10,good=at<=S.lim[0]&&av<=S.lim[1],tx=`${at.toFixed(1)} °C, ${av.toFixed(3)} g`;
+   k.s=good?"closed":"reo";k.after=tx;lg(2,()=>good?T().g1(tx):T().g2(tx));if(good){S.armed=false;S.okc=0}}}}
+function confirm(id){const a=S.alerts.find(x=>x.id===id);a.s="c";const tmp=a.rT>a.rV*1.5;lg(0,()=>T().m3);
+ const hy=tmp?"t":"v",pr=Math.max(a.rT,a.rV)>4?"h":"n";S.tasks.push({id:a.id,s:"open",hy,pr,n:0,a:{t:0,v:0},before:`${a.t.toFixed(1)} °C, ${a.v.toFixed(3)} g`});lg(1,()=>T().p1(T().hy[hy],T().pr[pr]));render()}
+function dismiss(id){S.alerts.find(x=>x.id===id).s="x";lg(0,()=>T().m4);render()}
+function repair(id){const k=S.tasks.find(x=>x.id===id);k.s="ver";k.n=0;k.a={t:0,v:0};if($("rep").checked){S.fault=0;S.se=0;fb()}lg(2,()=>T().p2);render()}
+/* ---- Render ---- */
+function render(){const t=T(),w=S.w<=CAL;let cls="ok",txt=t.ok;
+ const act=S.alerts.some(a=>a.s==="r"),ver=S.tasks.some(k=>k.s==="ver");
+ if(w){cls="wait";txt=`${t.cal} ${S.w}/${CAL}`}else if(act){cls="bad";txt=t.rv}else if(ver){cls="wait";txt=t.rp}
+ $("st").className="pill "+cls;$("st").textContent=txt;
+ $("v1").textContent=S.temp.toFixed(1)+(S.lim?"  /  "+S.lim[0].toFixed(1):"");$("v2").textContent=S.vib.toFixed(3)+(S.lim?"  /  "+S.lim[1].toFixed(3):"");$("v3").textContent=S.sc.toFixed(2)+(S.sl?"  /  "+S.sl.toFixed(2):"");
+ $("al").innerHTML=S.alerts.filter(a=>a.s==="r").map(a=>`<div class="item"><span class="tag b">#${a.id}</span> ${t.al(a.sc.toFixed(2))}<div class="r"><button class="p" data-c="${a.id}">${t.cf}</button><button data-x="${a.id}">${t.fa}</button></div></div>`).join("")||`<div class="empty">${t.none}</div>`;
+ $("tk").innerHTML=S.tasks.map(k=>`<div class="item"><span class="tag ${k.s==="closed"?"g":k.s==="reo"?"b":""}">${t.st[k.s]}</span> <b>#${k.id}</b> <small>${t.pr[k.pr]}</small><div>${t.hy[k.hy]}</div>
+ <small>${t.bf}: <bdi>${k.before}</bdi>${k.after?` | ${t.af}: <bdi>${k.after}</bdi>`:""}${k.s==="ver"?` | ${k.n}/${VER}`:""}</small>${k.s==="open"||k.s==="reo"?`<div class="r"><button class="p" data-r="${k.id}">${t.rd}</button></div>`:""}</div>`).join("")||`<div class="empty">${t.notk}</div>`;
+ $("lo").innerHTML=S.log.map(e=>`<div><i>${t.ag[e.a]}</i>: <bdi>${typeof e.m==="function"?e.m():e.m}</bdi></div>`).join("");
+ const row=(n,d)=>`<tr><td>${n}</td><td>${d.fa}</td><td>${d.ms}</td><td>${d.dl===null?"-":(d.dl*.25).toFixed(1)+" s"}</td></tr>`;
+ $("cmp").innerHTML=`<tr><th></th><th>${t.fas}</th><th>${t.ms}</th><th>${t.dl}</th></tr>${row(t.th,S.thr)}${row(t.ifo,S.iff)}`;
+ $("rd").textContent=`${t.w}: ${S.w}`}
+function fb(){$("fb").innerHTML=T().f.map((n,i)=>`<button class="${S.fault===i?"on":""}" data-f="${i}">${n}</button>`).join("")}
+function labels(){const t=T();$("ttl").textContent=t.ttl;$("h_email").textContent=t.hEmail;$("l_email").textContent=t.lEmail;$("saveEmail").textContent=t.saveEmail;$("testEmail").textContent=t.testEmail;$("nt").textContent=t.nt;$("h_m").textContent=t.hm;$("l_sev").textContent=t.sev;$("l_rep").textContent=t.rep;$("rs").textContent=t.rs;
+ $("pz").textContent=S.run?t.pz:t.ru;$("h_c").textContent=t.hc;$("c1").textContent=t.c1;$("c2").textContent=t.c2;$("c3").textContent=t.c3;$("lg1").textContent=t.lg1;
+ $("h_a").textContent=t.ha;$("h_t").textContent=t.hn;$("h_g").textContent=t.hg;$("h_k").textContent=t.hk;fb();render()}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+ if(d.f!==undefined){S.fault=+d.f;fb()}else if(d.c)confirm(+d.c);else if(d.x)dismiss(+d.x);else if(d.r)repair(+d.r)});
+$("saveEmail").onclick=saveRecipient;
+$("testEmail").onclick=()=>{if(!saveRecipient())return;postEmail({to:recipient(),kind:"test",motorId:"RAQEEB-MOTOR-001",timestamp:new Date().toISOString()})};
+try{const savedEmail=localStorage.getItem(EMAIL_STORAGE_KEY);if(savedEmail)$("qualityEmail").value=savedEmail}catch(e){}
+$("lg").onclick=()=>{lang=lang==="en"?"ar":"en";document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";$("lg").textContent=lang==="en"?"عربي":"EN";labels()};
+$("pz").onclick=()=>{S.run=!S.run;$("pz").textContent=S.run?T().pz:T().ru};
+$("rs").onclick=()=>{reset();labels()};
+/* ---- Drawing ---- */
+function fit(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1,w=Math.round(r.width*d),h=Math.round(r.height*d);if(c.width!==w||c.height!==h){c.width=w;c.height=h}return c.getContext("2d")}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function chart(c,a,lim,lo,hi,col){const g=fit(c),W=c.width,Hh=c.height,H=S.h,L=a.length;g.clearRect(0,0,W,Hh);
+ const X=i=>(i+N-L)/(N-1)*W,Y=v=>Hh-clamp((v-lo)/(hi-lo),0,1)*Hh;
+ g.fillStyle=css("--band");H.f.forEach((f,i)=>{if(f)g.fillRect(X(i),0,W/N+1,Hh)});
+ g.strokeStyle=css("--line");g.lineWidth=1;g.strokeRect(0,0,W,Hh);
+ if(lim!=null){g.strokeStyle=css("--or");g.setLineDash([6,4]);g.lineWidth=2;g.beginPath();g.moveTo(0,Y(lim));g.lineTo(W,Y(lim));g.stroke();g.setLineDash([])}
+ g.strokeStyle=col;g.lineWidth=2.2;g.beginPath();a.forEach((v,i)=>i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)));g.stroke()}
+function motor(){const g=fit($("motor")),s=$("motor").width/300;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,$("motor").width,$("motor").height);g.scale(s,s);
+ const j=Math.max(0,S.vib-.055)*60,heat=clamp((S.temp-42)/34,0,1);S.ang+=S.run?.28:0;
+ g.save();g.translate((Math.random()-.5)*j,(Math.random()-.5)*j*.6);
+ g.fillStyle="#35506d";g.fillRect(25,150,230,12);
+ g.fillStyle=`rgb(${Math.round(70+185*heat)},${Math.round(140-60*heat)},${Math.round(150-100*heat)})`;g.fillRect(45,70,150,80);
+ g.fillStyle="rgba(255,255,255,.18)";for(let i=0;i<6;i++)g.fillRect(55+i*24,70,5,80);
+ g.fillStyle="#2b3f55";g.fillRect(195,98,22,24);
+ g.save();g.translate(240,110);g.rotate(S.ang);g.fillStyle="#9fb3bf";for(let k=0;k<4;k++){g.rotate(Math.PI/2);g.fillRect(-4,0,8,36)}g.beginPath();g.arc(0,0,9,0,7);g.fillStyle="#12202e";g.fill();g.restore();
+ g.restore();g.fillStyle=S.iff.flag?"#d64545":"#1f9d6b";g.beginPath();g.arc(30,30,9,0,7);g.fill()}
+function frame(){const H=S.h;chart($("ct"),H.t,S.lim&&S.lim[0],38,68,css("--teal"));chart($("cv"),H.v,S.lim&&S.lim[1],0,.3,css("--ink"));chart($("cs"),H.s,S.sl,.2,1,css("--bad"));motor();requestAnimationFrame(frame)}
+reset();labels();frame();setInterval(step,250);
+</script></body></html>
